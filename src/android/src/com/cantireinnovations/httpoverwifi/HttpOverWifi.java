@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -33,7 +34,7 @@ import org.json.JSONObject;
 
 public class HttpOverWifi extends CordovaPlugin {
 
-    private static final String TAG = "com.cantireinnovations.httpoverwifi";
+    private static final String TAG = "HttpOverWifi";
 
     private ConnectivityManager connectivityManager;
 
@@ -52,6 +53,9 @@ public class HttpOverWifi extends CordovaPlugin {
     }
 
     private boolean request(JSONArray data, CallbackContext callbackContext) {
+        Log.v(TAG, "Entering request");
+
+        Log.v(TAG, "Interpreting arguments");
         String method;
         URL url;
         HashMap<String, String> headers = new HashMap<String, String>();
@@ -80,25 +84,38 @@ public class HttpOverWifi extends CordovaPlugin {
             return false;
         }
 
-        Network wifiNetwork = null;
-        for (Network network : connectivityManager.getAllNetworks()) {
-            NetworkInfo networkInfo = connectivityManager.getNetworkInfo(network);
-            if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
-                wifiNetwork = network;
-                break;
-            }
-        }
-        if (wifiNetwork == null) {
-            callbackContext.error("Could not find WiFi network to bind to");
-            return false;
-        }
-
         HttpURLConnection connection;
-        try {
-            connection = (HttpURLConnection)wifiNetwork.openConnection(url);
-        } catch (IOException e) {
-            callbackContext.error("Got IOException on openConnection, " + e.getMessage());
-            return false;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            Log.d(TAG, "Skipping selecting network because lower than Lollipop");
+            Log.v(TAG, "Creating request");
+            try {
+                connection = (HttpURLConnection)url.openConnection();
+            } catch (IOException e) {
+                callbackContext.error("Got IOException on openConnection, " + e.getMessage());
+                return false;
+            }
+        } else {
+            Log.v(TAG, "Selecting network");
+            Network wifiNetwork = null;
+            for (Network network : connectivityManager.getAllNetworks()) {
+                NetworkInfo networkInfo = connectivityManager.getNetworkInfo(network);
+                if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                    wifiNetwork = network;
+                    break;
+                }
+            }
+            if (wifiNetwork == null) {
+                callbackContext.error("Could not find WiFi network to bind to");
+                return false;
+            }
+
+            Log.v(TAG, "Creating request");
+            try {
+                connection = (HttpURLConnection)wifiNetwork.openConnection(url);
+            } catch (IOException e) {
+                callbackContext.error("Got IOException on openConnection, " + e.getMessage());
+                return false;
+            }
         }
 
         boolean successful = true;
@@ -158,6 +175,7 @@ public class HttpOverWifi extends CordovaPlugin {
                 }
             }
 
+            Log.v(TAG, "Connecting");
             try {
                 connection.connect();
             } catch(IOException e) {
@@ -173,6 +191,9 @@ public class HttpOverWifi extends CordovaPlugin {
             }
 
             responseHeaders = connection.getHeaderFields();
+            if (responseHeaders == null) {
+                responseHeaders = new HashMap<String, List<String>>();
+            }
 
             InputStream responseBodyInputStream;
             try {
@@ -205,6 +226,7 @@ public class HttpOverWifi extends CordovaPlugin {
             connection.disconnect();
         }
 
+        Log.v(TAG, "Creating response object");
         JSONObject returnVal = new JSONObject();
         try {
             returnVal.put("status", statusCode);
@@ -230,6 +252,8 @@ public class HttpOverWifi extends CordovaPlugin {
             callbackContext.error("Error building return value, " + e.getMessage());
             return false;
         }
+
+        Log.v(TAG, "Exiting request");
         if (successful) {
             callbackContext.success(returnVal);
         } else {
