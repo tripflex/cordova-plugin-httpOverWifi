@@ -261,16 +261,4 @@ public class HttpOverWifi extends CordovaPlugin {
         }
         return successful;
     }
-
-    /*private void copyStream(InputStream in, OutputStream out) {
-        final int BUFFER_SIZE = 1024;
-        byte[] buffer = new byte[BUFFER_SIZE];
-        int offset = 0;
-        int bytesRead;
-        do {
-            bytesRead = in.read(buffer, offset, BUFFER_SIZE);
-            out.write(buffer, offset, bytesRead);
-            offset += bytesRead;
-        } while(bytesRead > 0);
-    }*/
 }
