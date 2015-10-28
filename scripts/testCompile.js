@@ -23,7 +23,7 @@ function runProcess(name, args, cwd) {
 }
 
 var tempProjectPath;
-tmp.dirAsync({ unsafeCleanup: false/*true*/ })
+tmp.dirAsync({ unsafeCleanup: true })
     .then(tmpPath => {
         tempProjectPath = path.join(tmpPath, 'testApp');
         console.log(`Creating temporary project in: ${tempProjectPath}`);
