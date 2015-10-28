@@ -208,28 +208,9 @@ public class HttpOverWifi extends CordovaPlugin {
             connection.disconnect();
         }
 
-        Log.v(TAG, "Creating response object");
-        JSONObject returnVal = new JSONObject();
+        JSONObject returnVal;
         try {
-            returnVal.put("status", statusCode);
-            returnVal.put("data", responseBody);
-            JSONObject returnHeaders = new JSONObject();
-            for(Map.Entry<String, List<String>> header : responseHeaders.entrySet()) {
-                StringBuilder valueBuilder = new StringBuilder();
-                boolean first = true;
-                for(String value : header.getValue()) {
-                    if (!first) {
-                        valueBuilder.append(",");
-                    } else {
-                        first = false;
-                    }
-                    valueBuilder.append(value);
-                }
-                if (header.getKey() != null ) {
-                    returnHeaders.put(header.getKey(), valueBuilder.toString());
-                }
-            }
-            returnVal.put("headers", returnHeaders);
+            returnVal = buildOutputObject(statusCode, responseBody, responseHeaders);
         } catch (JSONException e) {
             callbackContext.error("Error building return value, " + e.getMessage());
             return false;
@@ -262,6 +243,35 @@ public class HttpOverWifi extends CordovaPlugin {
         final int TEN_SECONDS = 10000;
         int timeout = options.optInt("timeout", TEN_SECONDS);
         return new InputArguments(method, url, headers, body, timeout);
+    }
+
+    private JSONObject buildOutputObject(
+            int statusCode,
+            String responseBody,
+            Map<String, List<String>> responseHeaders
+    ) throws JSONException {
+        Log.v(TAG, "Creating response object");
+        JSONObject returnVal = new JSONObject();
+        returnVal.put("status", statusCode);
+        returnVal.put("data", responseBody);
+        JSONObject returnHeaders = new JSONObject();
+        for(Map.Entry<String, List<String>> header : responseHeaders.entrySet()) {
+            StringBuilder valueBuilder = new StringBuilder();
+            boolean first = true;
+            for(String value : header.getValue()) {
+                if (!first) {
+                    valueBuilder.append(",");
+                } else {
+                    first = false;
+                }
+                valueBuilder.append(value);
+            }
+            if (header.getKey() != null ) {
+                returnHeaders.put(header.getKey(), valueBuilder.toString());
+            }
+        }
+        returnVal.put("headers", returnHeaders);
+        return returnVal;
     }
 
     private class InputArguments {
