@@ -1,0 +1,29 @@
+{
+  "name": "cordova-plugin-httpoverwifi",
+  "version": "0.0.1",
+  "description": "A Cordova plugin for performing an HTTP request over a WiFi network",
+  "scripts": {
+    "test": "scripts/testCompile.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CanTireInnovations/cordova-plugin-httpOverWifi.git"
+  },
+  "keywords": [
+    "cordova",
+    "plugin",
+    "http",
+    "wifi"
+  ],
+  "author": "Canadian Tire Innovations",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CanTireInnovations/cordova-plugin-httpOverWifi/issues"
+  },
+  "homepage": "https://github.com/CanTireInnovations/cordova-plugin-httpOverWifi#readme",
+  "devDependencies": {
+    "bluebird": "^3.0.1",
+    "cordova": "^5.3.3",
+    "tmp": "0.0.28"
+  }
+}
