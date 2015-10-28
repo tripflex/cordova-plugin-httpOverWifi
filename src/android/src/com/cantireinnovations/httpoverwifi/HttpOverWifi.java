@@ -55,27 +55,9 @@ public class HttpOverWifi extends CordovaPlugin {
     private boolean request(JSONArray data, CallbackContext callbackContext) {
         Log.v(TAG, "Entering request");
 
-        Log.v(TAG, "Interpreting arguments");
-        String method;
-        URL url;
-        HashMap<String, String> headers = new HashMap<String, String>();
-        String body;
-        int timeout;
+        InputArguments inputArguments;
         try {
-            JSONObject options = data.getJSONObject(0);
-            method = options.getString("method");
-            url = new URL(options.getString("url"));
-            JSONObject optHeaders = options.optJSONObject("headers");
-            if (optHeaders != null) {
-                Iterator<String> headerNames = optHeaders.keys();
-                while(headerNames.hasNext()) {
-                    String headerName = headerNames.next();
-                    headers.put(headerName, optHeaders.getString(headerName));
-                }
-            }
-            body = options.optString("data");
-            final int TEN_SECONDS = 10000;
-            timeout = options.optInt("timeout", TEN_SECONDS);
+            inputArguments = getArgumentsFromData(data);
         } catch (JSONException e) {
             callbackContext.error("Invalid options passed, " + e.getMessage());
             return false;
@@ -89,7 +71,7 @@ public class HttpOverWifi extends CordovaPlugin {
             Log.d(TAG, "Skipping selecting network because lower than Lollipop");
             Log.v(TAG, "Creating request");
             try {
-                connection = (HttpURLConnection)url.openConnection();
+                connection = (HttpURLConnection)inputArguments.getUrl().openConnection();
             } catch (IOException e) {
                 callbackContext.error("Got IOException on openConnection, " + e.getMessage());
                 return false;
@@ -111,7 +93,7 @@ public class HttpOverWifi extends CordovaPlugin {
 
             Log.v(TAG, "Creating request");
             try {
-                connection = (HttpURLConnection)wifiNetwork.openConnection(url);
+                connection = (HttpURLConnection)wifiNetwork.openConnection(inputArguments.getUrl());
             } catch (IOException e) {
                 callbackContext.error("Got IOException on openConnection, " + e.getMessage());
                 return false;
@@ -124,22 +106,22 @@ public class HttpOverWifi extends CordovaPlugin {
         String responseBody;
         try {
             try {
-                connection.setRequestMethod(method);
+                connection.setRequestMethod(inputArguments.getMethod());
             } catch (ProtocolException e) {
                 callbackContext.error("Method was not supported or it was set after connection was opened, " + e.getMessage());
                 return false;
             }
-            for(Map.Entry<String, String> header : headers.entrySet()) {
+            for(Map.Entry<String, String> header : inputArguments.getHeaders().entrySet()) {
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
-            connection.setConnectTimeout(timeout);
-            connection.setReadTimeout(timeout);
-            boolean hasBody = !body.equals("");
+            connection.setConnectTimeout(inputArguments.getTimeout());
+            connection.setReadTimeout(inputArguments.getTimeout());
+            boolean hasBody = !inputArguments.getBody().equals("");
             if (hasBody) {
                 connection.setDoOutput(true);
                 byte[] bodyBytes;
                 try {
-                    bodyBytes = body.getBytes("UTF-8");
+                    bodyBytes = inputArguments.getBody().getBytes("UTF-8");
                 } catch (UnsupportedEncodingException e) {
                     callbackContext.error("UTF-8 was not a supported encoding, " + e.getMessage());
                     return false;
@@ -260,5 +242,68 @@ public class HttpOverWifi extends CordovaPlugin {
             callbackContext.error(returnVal);
         }
         return successful;
+    }
+
+    private InputArguments getArgumentsFromData(JSONArray data) throws JSONException, MalformedURLException {
+        Log.v(TAG, "Interpreting arguments");
+        JSONObject options = data.getJSONObject(0);
+        String method = options.getString("method");
+        URL url = new URL(options.getString("url"));
+        HashMap<String, String> headers = new HashMap<String, String>();
+        JSONObject optHeaders = options.optJSONObject("headers");
+        if (optHeaders != null) {
+            Iterator<String> headerNames = optHeaders.keys();
+            while(headerNames.hasNext()) {
+                String headerName = headerNames.next();
+                headers.put(headerName, optHeaders.getString(headerName));
+            }
+        }
+        String body = options.optString("data");
+        final int TEN_SECONDS = 10000;
+        int timeout = options.optInt("timeout", TEN_SECONDS);
+        return new InputArguments(method, url, headers, body, timeout);
+    }
+
+    private class InputArguments {
+
+        private String method;
+        private URL url;
+        private HashMap<String, String> headers;
+        private String body;
+        private int timeout;
+
+        public InputArguments(
+                String method,
+                URL url,
+                HashMap<String, String> headers,
+                String body,
+                int timeout
+        ) {
+            this.method = method;
+            this.url = url;
+            this.headers = headers;
+            this.body = body;
+            this.timeout = timeout;
+        }
+
+        public String getMethod() {
+            return method;
+        }
+
+        public URL getUrl() {
+            return url;
+        }
+
+        public HashMap<String, String> getHeaders() {
+            return headers;
+        }
+
+        public String getBody() {
+            return body;
+        }
+
+        public int getTimeout() {
+            return timeout;
+        }
     }
 }
