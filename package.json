@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-httpoverwifi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Cordova plugin for performing an HTTP request over a WiFi network",
   "scripts": {
     "test": "scripts/testCompile.js"
